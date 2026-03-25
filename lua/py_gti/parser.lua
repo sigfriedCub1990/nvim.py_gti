@@ -5,12 +5,19 @@ local util = require("py_gti.util")
 
 local M = {}
 
--- Find subclasses of a given base class name
+-- Find subclasses of a given base class name.
+-- Two patterns: plain identifier base and subscript (generic) base e.g. Repo[Type].
 local SUBCLASS_QUERY_SRC = [[
 (class_definition
   name: (identifier) @subclass_name
   superclasses: (argument_list
     (identifier) @base_name)) @subclass
+
+(class_definition
+  name: (identifier) @subclass_name2
+  superclasses: (argument_list
+    (subscript
+      value: (identifier) @base_name2))) @subclass2
 ]]
 
 -- Find method definitions by name within a subtree
@@ -77,9 +84,9 @@ function M.find_implementations(filepath, class_name, method_name, max_filesize)
       capture_map[captures[cap_idx]] = n
     end
 
-    local subclass_node = capture_map["subclass"]
-    local base_node = capture_map["base_name"]
-    local subclass_name_node = capture_map["subclass_name"]
+    local subclass_node = capture_map["subclass"] or capture_map["subclass2"]
+    local base_node = capture_map["base_name"] or capture_map["base_name2"]
+    local subclass_name_node = capture_map["subclass_name"] or capture_map["subclass_name2"]
 
     if not subclass_node or not base_node or not subclass_name_node then
       goto continue_subclass

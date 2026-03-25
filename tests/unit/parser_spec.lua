@@ -104,6 +104,20 @@ describe("parser.find_implementations", function()
     assert.is_true(found_cached)
   end)
 
+  it("finds implementations when concrete class uses subscript base: Repo[ConcreteType]", function()
+    local results = parser.find_implementations(
+      FIXTURES .. "/impl_generic_subscript.py",
+      "BusinessOfferRepository",
+      "find",
+      1024 * 1024
+    )
+    -- SqlBusinessOfferRepository and CachedBusinessOfferRepository both implement find()
+    assert.equals(2, #results)
+    for _, r in ipairs(results) do
+      assert.matches("def find", r.text)
+    end
+  end)
+
   it("skips files exceeding max_filesize", function()
     -- Use 1 byte as the limit so any real file is skipped
     local results = parser.find_implementations(
