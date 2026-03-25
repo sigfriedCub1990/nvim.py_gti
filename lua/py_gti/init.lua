@@ -65,7 +65,11 @@ function M.goto_implementations()
     return
   end
 
-  quickfix.populate(all_results, class_name, method_name)
+  if cfg.picker == "fzf-lua" then
+    require("py_gti.fzf_picker").show(all_results, class_name, method_name)
+  else
+    quickfix.populate(all_results, class_name, method_name)
+  end
 end
 
 return M

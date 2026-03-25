@@ -7,6 +7,7 @@ M.defaults = {
   default_keymap = "<leader>gi",
   respect_gitignore = true,
   max_filesize = 1024 * 1024, -- 1 MB
+  picker = "quickfix",        -- "quickfix" | "fzf-lua"
 }
 
 ---@param opts table|nil User-supplied options
