@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls:*)",
+      "Bash(make test:*)",
+      "Bash(make deps:*)",
+      "Bash(nvim:*)",
+      "Bash(which cc:*)",
+      "Bash(make docker-build:*)",
+      "Bash(make docker-test:*)"
+    ]
+  }
+}

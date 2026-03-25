@@ -1,0 +1,63 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # -----------------------------------------------------------------------
+      # 1. Source checkout
+      # -----------------------------------------------------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # -----------------------------------------------------------------------
+      # 2. Restore the Docker image from cache.
+      #    The cache key is a hash of the Dockerfile and the minimal_init.lua
+      #    that gets COPYed into the image (which triggers the TSInstall layer).
+      #    When either file changes the image is rebuilt from scratch; otherwise
+      #    `docker load` restores all layers in ~seconds.
+      # -----------------------------------------------------------------------
+      - name: Restore Docker image cache
+        id: docker-cache
+        uses: actions/cache@v4
+        with:
+          path: /tmp/docker-cache/nvim-py-gti-test.tar
+          key: docker-${{ runner.os }}-${{ hashFiles('Dockerfile', 'tests/minimal_init.lua') }}
+
+      # -----------------------------------------------------------------------
+      # 3. Load the cached image if the cache was hit; build it if not.
+      # -----------------------------------------------------------------------
+      - name: Load cached image
+        if: steps.docker-cache.outputs.cache-hit == 'true'
+        run: docker load -i /tmp/docker-cache/nvim-py-gti-test.tar
+
+      - name: Build Docker image
+        if: steps.docker-cache.outputs.cache-hit != 'true'
+        run: docker build -t nvim-py-gti-test .
+
+      # -----------------------------------------------------------------------
+      # 4. Save the newly built image so subsequent runs can restore it.
+      #    This step only runs when we actually built (cache miss).
+      # -----------------------------------------------------------------------
+      - name: Save Docker image to cache
+        if: steps.docker-cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p /tmp/docker-cache
+          docker save nvim-py-gti-test -o /tmp/docker-cache/nvim-py-gti-test.tar
+
+      # -----------------------------------------------------------------------
+      # 5. Run the full test suite.
+      #    The plugin source is bind-mounted; the image provides Neovim, deps,
+      #    and the pre-compiled Python parser — no network access needed.
+      # -----------------------------------------------------------------------
+      - name: Run tests
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/plugin" \
+            -w /plugin \
+            nvim-py-gti-test make test
