@@ -79,6 +79,31 @@ describe("parser.find_implementations", function()
     assert.equals(0, #results)
   end)
 
+  it("finds implementation when concrete class inherits from ABC with multiple bases (single-base impl)", function()
+    local results = parser.find_implementations(
+      FIXTURES .. "/impl_multi_base.py",
+      "BusinessOfferRepository",
+      "find",
+      1024 * 1024
+    )
+    -- SqlBusinessOfferRepository and CachedBusinessOfferRepository both implement find()
+    assert.equals(2, #results)
+    local names = {}
+    for _, r in ipairs(results) do
+      table.insert(names, r.text)
+    end
+    local found_sql = false
+    local found_cached = false
+    for _, t in ipairs(names) do
+      if t:match("def find") then
+        found_sql = true
+        found_cached = true
+      end
+    end
+    assert.is_true(found_sql)
+    assert.is_true(found_cached)
+  end)
+
   it("skips files exceeding max_filesize", function()
     -- Use 1 byte as the limit so any real file is skipped
     local results = parser.find_implementations(

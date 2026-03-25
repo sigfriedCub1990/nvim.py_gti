@@ -41,6 +41,29 @@ describe("PyGTI integration", function()
     end
   end)
 
+  it("populates quickfix for find() in impl_multi_base.py (Generic + abc.ABC, multi-line def)", function()
+    open_fixture("impl_multi_base.py", 10, 4) -- cursor on "def find("
+
+    local py_gti = require("py_gti")
+    py_gti.goto_implementations()
+
+    local qf = vim.fn.getqflist({ title = true, items = true })
+
+    -- Title should mention BusinessOfferRepository.find
+    assert.matches("BusinessOfferRepository%.find", qf.title)
+
+    -- Should find both SqlBusinessOfferRepository and CachedBusinessOfferRepository
+    assert.equals(2, #qf.items)
+
+    local texts = {}
+    for _, item in ipairs(qf.items) do
+      table.insert(texts, vim.fn.bufname(item.bufnr))
+    end
+    for _, fname in ipairs(texts) do
+      assert.matches("impl_multi_base%.py", fname)
+    end
+  end)
+
   it("shows a warning on a non-abstract method", function()
     open_fixture("abc_simple.py", 16, 4) -- cursor on "def breathe" (not abstract)
 
