@@ -35,6 +35,10 @@ nvim --headless -u tests/minimal_init.lua \
   +"PlenaryBustedDirectory tests/ {minimal_init = 'tests/minimal_init.lua'}" +qa
 ```
 
+## Workflow
+
+- **Test before fix**: always write the failing test(s) first, confirm they fail, then implement the fix.
+
 ## Key Design Notes
 
 - **No buffer overhead**: arbitrary `.py` files are parsed via `vim.treesitter.get_string_parser(source, "python")`.

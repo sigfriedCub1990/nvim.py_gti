@@ -66,6 +66,43 @@ describe("context.get_abstract_method", function()
     assert.equals("MyABC", class)
   end)
 
+  it("detects @abc.abstractmethod in class(abc.ABC) — dotted superclass + dotted decorator", function()
+    local lines = {
+      "import abc",
+      "",
+      "class FlagRepo(abc.ABC):",
+      "    @abc.abstractmethod",
+      "    def is_active(self, flag_name) -> bool: ...",
+    }
+    local bufnr, win = make_buf(lines, 5, 4)
+
+    local method, class = context.get_abstract_method()
+
+    cleanup(bufnr, win)
+
+    assert.equals("is_active", method)
+    assert.equals("FlagRepo", class)
+  end)
+
+  it("detects bare @abstractmethod in class(abc.ABC) — dotted superclass, bare decorator", function()
+    local lines = {
+      "import abc",
+      "from abc import abstractmethod",
+      "",
+      "class FlagRepo(abc.ABC):",
+      "    @abstractmethod",
+      "    def get_flags(self) -> list: ...",
+    }
+    local bufnr, win = make_buf(lines, 6, 4)
+
+    local method, class = context.get_abstract_method()
+
+    cleanup(bufnr, win)
+
+    assert.equals("get_flags", method)
+    assert.equals("FlagRepo", class)
+  end)
+
   it("returns nil when cursor is on a non-abstract method", function()
     local lines = {
       "from abc import ABC, abstractmethod",

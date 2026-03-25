@@ -23,12 +23,19 @@ local ABSTRACT_QUERY_SRC = [[
     name: (identifier) @method_name2)) @abs_fn2
 ]]
 
--- Query: find class definitions that inherit from ABC or ABCMeta
+-- Query: find class definitions that inherit from ABC or ABCMeta (bare or dotted abc.ABC)
 local CLASS_QUERY_SRC = [[
 (class_definition
   name: (identifier) @class_name
   superclasses: (argument_list
     (identifier) @base)) @cls
+
+(class_definition
+  name: (identifier) @class_name2
+  superclasses: (argument_list
+    (attribute
+      object: (identifier) @mod
+      attribute: (identifier) @base_attr))) @cls2
 ]]
 
 ---Return the source string for the current buffer.
@@ -158,15 +165,16 @@ function M.get_abstract_method()
       capture_map[captures[cap_idx]] = n
     end
 
-    local cls_node = capture_map["cls"]
-    local base_node = capture_map["base"]
-    local class_name_node = capture_map["class_name"]
+    local cls_node = capture_map["cls"] or capture_map["cls2"]
+    local class_name_node = capture_map["class_name"] or capture_map["class_name2"]
 
-    if not cls_node or not base_node or not class_name_node then
+    if not cls_node or not class_name_node then
       goto continue_cls
     end
 
-    local base_text = util.node_text(base_node, source)
+    -- Pattern 1: bare ABC/ABCMeta; Pattern 2: dotted abc.ABC / abc.ABCMeta
+    local base_text = capture_map["base"] and util.node_text(capture_map["base"], source)
+      or capture_map["base_attr"] and util.node_text(capture_map["base_attr"], source)
     if base_text ~= "ABC" and base_text ~= "ABCMeta" then
       goto continue_cls
     end
