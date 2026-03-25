@@ -120,6 +120,20 @@ If fzf-lua is not installed the plugin falls back to quickfix automatically.
 
 ---
 
+## Health check
+
+Run `:checkhealth py_gti` to verify your setup:
+
+```
+py_gti
+  OK Neovim >= 0.10
+  OK Python tree-sitter parser is available
+  OK plenary.nvim found
+  OK fzf-lua found (picker = "fzf-lua" available)
+```
+
+---
+
 ## Running the tests
 
 ```bash
