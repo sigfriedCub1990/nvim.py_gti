@@ -103,6 +103,75 @@ describe("context.get_abstract_method", function()
     assert.equals("FlagRepo", class)
   end)
 
+  it("detects method in class with multiple bases including abc.ABC", function()
+    local lines = {
+      "import abc",
+      "from typing import Generic, TypeVar",
+      "OfferType = TypeVar('OfferType')",
+      "",
+      "class BusinessOfferRepository(Generic[OfferType], abc.ABC):",
+      "    @abc.abstractmethod",
+      "    def find(self, center_code: str) -> OfferType: ...",
+    }
+    local bufnr, win = make_buf(lines, 7, 4)
+
+    local method, class = context.get_abstract_method()
+
+    cleanup(bufnr, win)
+
+    assert.equals("find", method)
+    assert.equals("BusinessOfferRepository", class)
+  end)
+
+  it("detects multi-line abstract method, cursor on def line", function()
+    local lines = {
+      "import abc",
+      "from typing import Generic, TypeVar",
+      "OfferType = TypeVar('OfferType')",
+      "",
+      "class BusinessOfferRepository(Generic[OfferType], abc.ABC):",
+      "    @abc.abstractmethod",
+      "    def find(",
+      "        self,",
+      "        center_code: str,",
+      "        service_date: str,",
+      "    ) -> OfferType: ...",
+    }
+    local bufnr, win = make_buf(lines, 7, 4)
+
+    local method, class = context.get_abstract_method()
+
+    cleanup(bufnr, win)
+
+    assert.equals("find", method)
+    assert.equals("BusinessOfferRepository", class)
+  end)
+
+  it("detects multi-line abstract method, cursor on a parameter line", function()
+    local lines = {
+      "import abc",
+      "from typing import Generic, TypeVar",
+      "OfferType = TypeVar('OfferType')",
+      "",
+      "class BusinessOfferRepository(Generic[OfferType], abc.ABC):",
+      "    @abc.abstractmethod",
+      "    def find(",
+      "        self,",
+      "        center_code: str,",
+      "        service_date: str,",
+      "    ) -> OfferType: ...",
+    }
+    -- Cursor on the "center_code" parameter line
+    local bufnr, win = make_buf(lines, 9, 8)
+
+    local method, class = context.get_abstract_method()
+
+    cleanup(bufnr, win)
+
+    assert.equals("find", method)
+    assert.equals("BusinessOfferRepository", class)
+  end)
+
   it("returns nil when cursor is on a non-abstract method", function()
     local lines = {
       "from abc import ABC, abstractmethod",
