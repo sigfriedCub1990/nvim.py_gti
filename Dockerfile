@@ -31,38 +31,25 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # ---------------------------------------------------------------------------
-# 2. Install Neovim latest stable from the official tarball.
-#    The tag is resolved once at build time; pin it via --build-arg if you
-#    need a specific version: --build-arg NVIM_TAG=v0.10.4
+# 2. Install Neovim and the tree-sitter CLI.
+#    Both tags are resolved at build time so the layer is stable and cacheable.
+#    Override via: --build-arg NVIM_TAG=v0.10.4  or  --build-arg TS_TAG=v0.25.3
+#    nvim-treesitter calls the tree-sitter CLI internally when compiling parsers.
 # ---------------------------------------------------------------------------
-ARG NVIM_TAG=stable
+ARG NVIM_TAG=v0.12.2
+ARG TS_TAG=v0.25.3
 
 RUN ARCH=$(uname -m) \
     && case "$ARCH" in \
-         aarch64|arm64) NVIM_ARCH="arm64" ;; \
-         *) NVIM_ARCH="x86_64" ;; \
+         aarch64|arm64) NVIM_ARCH="arm64"; TS_ARCH="arm64" ;; \
+         *) NVIM_ARCH="x86_64"; TS_ARCH="x64" ;; \
        esac \
     && curl -sSfL \
          "https://github.com/neovim/neovim/releases/download/${NVIM_TAG}/nvim-linux-${NVIM_ARCH}.tar.gz" \
          -o /tmp/nvim.tar.gz \
     && tar -C /usr/local --strip-components=1 -xzf /tmp/nvim.tar.gz \
     && rm /tmp/nvim.tar.gz \
-    && nvim --version
-
-# ---------------------------------------------------------------------------
-# Install the tree-sitter CLI — required by nvim-treesitter to compile parsers.
-# Prebuilt binary from the official releases; arch-aware (x64 vs arm64).
-# ---------------------------------------------------------------------------
-RUN ARCH=$(uname -m) \
-    && case "$ARCH" in \
-         aarch64|arm64) TS_ARCH="arm64" ;; \
-         *) TS_ARCH="x64" ;; \
-       esac \
-    && TS_TAG=$(curl -sSf \
-         -H "Accept: application/vnd.github+json" \
-         "https://api.github.com/repos/tree-sitter/tree-sitter/releases/latest" \
-         | grep '"tag_name"' | head -1 \
-         | sed 's/.*"tag_name": "\(.*\)".*/\1/') \
+    && nvim --version \
     && curl -sSfL \
          "https://github.com/tree-sitter/tree-sitter/releases/download/${TS_TAG}/tree-sitter-linux-${TS_ARCH}.gz" \
          -o /tmp/tree-sitter.gz \
@@ -87,7 +74,7 @@ RUN mkdir -p "${DEPS_DIR}" \
          "${DEPS_DIR}/nvim-treesitter"
 
 # ---------------------------------------------------------------------------
-# 4. Pre-compile the Python tree-sitter parser.
+# 3b. Pre-compile the Python tree-sitter parser.
 #    We copy only minimal_init.lua (not the whole plugin) so the image stays
 #    self-contained and does not need to be rebuilt when plugin sources change.
 #    TSInstall! writes the compiled python.so into:
@@ -107,7 +94,7 @@ RUN nvim --headless --noplugin \
       +qa
 
 # ---------------------------------------------------------------------------
-# 5. Default command: run the full test suite.
+# 4. Default command: run the full test suite.
 #    Override with e.g. `docker run ... make test-unit`.
 # ---------------------------------------------------------------------------
 CMD ["make", "test"]

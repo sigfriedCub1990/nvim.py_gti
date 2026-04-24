@@ -37,7 +37,7 @@ function M.find_implementations(filepath, class_name, method_name, max_filesize)
   max_filesize = max_filesize or (1024 * 1024)
 
   -- Size guard
-  local stat = vim.loop.fs_stat(filepath)
+  local stat = (vim.uv or vim.loop).fs_stat(filepath)
   if stat and stat.size > max_filesize then
     return {}
   end
