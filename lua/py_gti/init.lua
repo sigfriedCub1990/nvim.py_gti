@@ -65,6 +65,13 @@ function M.goto_implementations()
     return
   end
 
+  if #all_results == 1 then
+    local r = all_results[1]
+    vim.cmd("edit " .. vim.fn.fnameescape(r.filename))
+    vim.api.nvim_win_set_cursor(0, { r.lnum, r.col })
+    return
+  end
+
   if cfg.picker == "fzf-lua" then
     require("py_gti.fzf_picker").show(all_results, class_name, method_name)
   else

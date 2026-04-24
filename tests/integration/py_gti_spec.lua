@@ -15,6 +15,7 @@ end
 describe("PyGTI integration", function()
   after_each(function()
     -- Clean up quickfix and buffers between tests
+    vim.fn.setqflist({}, "r", { title = "", items = {} })
     vim.cmd("cclose")
     vim.cmd("silent! %bwipeout!")
   end)
@@ -84,6 +85,20 @@ describe("PyGTI integration", function()
     vim.notify = orig
 
     assert.is_true(notified, "expected a WARN notification for non-abstract method")
+  end)
+
+  it("jumps directly when there is exactly one implementation", function()
+    open_fixture("abc_unique.py", 7, 4) -- cursor on "def unique_method"
+
+    require("py_gti").goto_implementations()
+
+    -- Should have jumped directly: current buffer is impl_unique.py
+    local bufname = vim.api.nvim_buf_get_name(0)
+    assert.matches("impl_unique%.py", bufname)
+
+    -- Quickfix should NOT have been populated
+    local qf = vim.fn.getqflist({ items = true })
+    assert.is_true(#qf.items == 0, "quickfix should be empty for single-result direct jump")
   end)
 
   it(":PyGTI command is registered", function()
