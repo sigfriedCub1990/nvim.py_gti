@@ -68,7 +68,7 @@ function M.goto_implementations()
   if #all_results == 1 then
     local r = all_results[1]
     vim.cmd("edit " .. vim.fn.fnameescape(r.filename))
-    vim.api.nvim_win_set_cursor(0, { r.lnum, r.col })
+    vim.api.nvim_win_set_cursor(0, { r.lnum, r.col - 1 })
     return
   end
 

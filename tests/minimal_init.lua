@@ -61,17 +61,12 @@ vim.opt.rtp:prepend(plugin_root)
 vim.cmd("runtime! plugin/**/*.vim")
 vim.cmd("runtime! plugin/**/*.lua")
 
--- Ensure the Python tree-sitter parser is available.
--- First check if it's already compiled (common on developer machines).
--- If not, use nvim-treesitter's install module synchronously via TSInstall!
--- (the bang variant blocks until the C compiler finishes).
+-- Verify the Python tree-sitter parser is available (pre-compiled into the
+-- nvim-treesitter dep dir by the Dockerfile; errors are surfaced per-test).
 local has_parser = pcall(vim.treesitter.language.inspect, "python")
 if not has_parser then
-  local ok, err = pcall(vim.cmd, "TSInstall! python")
-  if not ok then
-    vim.notify(
-      "[minimal_init] TSInstall! python failed: " .. tostring(err),
-      vim.log.levels.WARN
-    )
-  end
+  vim.notify(
+    "[minimal_init] python tree-sitter parser not found — rebuild the Docker image",
+    vim.log.levels.ERROR
+  )
 end

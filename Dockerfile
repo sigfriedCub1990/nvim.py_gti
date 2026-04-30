@@ -75,23 +75,20 @@ RUN mkdir -p "${DEPS_DIR}" \
 
 # ---------------------------------------------------------------------------
 # 3b. Pre-compile the Python tree-sitter parser.
-#    We copy only minimal_init.lua (not the whole plugin) so the image stays
-#    self-contained and does not need to be rebuilt when plugin sources change.
-#    TSInstall! writes the compiled python.so into:
-#      /tmp/nvim-test-deps/nvim-treesitter/parser/python.so
-#    which is already on the rtp established by minimal_init.lua.
-#
-#    We COPY the file here so it is available during build; at test time the
-#    bind-mount at /plugin overrides it with the real source tree, which also
-#    contains tests/minimal_init.lua at the same relative path — so the
-#    already-compiled parser is found and TSInstall! is a no-op.
+#    Clone tree-sitter-python at the exact revision nvim-treesitter expects,
+#    build parser.so with the tree-sitter CLI, and place it directly in the
+#    nvim-treesitter parser directory that minimal_init.lua adds to rtp.
+#    This avoids the TSInstall async issue (install completes before +qa).
 # ---------------------------------------------------------------------------
-COPY tests/minimal_init.lua /opt/nvim-build/tests/minimal_init.lua
-
-RUN nvim --headless --noplugin \
-      -u /opt/nvim-build/tests/minimal_init.lua \
-      +"TSInstall! python" \
-      +qa
+ARG PYTHON_TS_REV=v0.25.0
+RUN mkdir -p "${DEPS_DIR}/nvim-treesitter/parser" \
+    && git clone --depth 1 --branch "${PYTHON_TS_REV}" \
+         https://github.com/tree-sitter/tree-sitter-python \
+         /tmp/tree-sitter-python \
+    && tree-sitter build \
+         -o "${DEPS_DIR}/nvim-treesitter/parser/python.so" \
+         /tmp/tree-sitter-python \
+    && rm -rf /tmp/tree-sitter-python
 
 # ---------------------------------------------------------------------------
 # 4. Default command: run the full test suite.

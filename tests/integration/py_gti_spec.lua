@@ -99,6 +99,10 @@ describe("PyGTI integration", function()
     -- Quickfix should NOT have been populated
     local qf = vim.fn.getqflist({ items = true })
     assert.is_true(#qf.items == 0, "quickfix should be empty for single-result direct jump")
+
+    -- Cursor must land on 'd' of 'def' (0-based col 4 for 4-space indent)
+    local cursor = vim.api.nvim_win_get_cursor(0)
+    assert.equals(4, cursor[2], "cursor column should be 0-based 4 (first char of 'def')")
   end)
 
   it(":PyGTI command is registered", function()
